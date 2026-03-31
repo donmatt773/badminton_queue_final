@@ -1,0 +1,17 @@
+{
+  "name": "badminton-queue-final",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "predev": "npm run stop:dev",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "stop:dev": "kill-port 4000 5173",
+    "dev:fresh": "npm run stop:dev && npm run dev",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "kill-port": "^2.0.1"
+  }
+}
