@@ -17,7 +17,7 @@ const courtResolver = {
           surfaceType: input.surfaceType,
           indoor: input.indoor,
           description: input.description ?? '',
-          status: input.status ?? 'active',
+          status: input.status ?? 'ACTIVE',
         });
         console.log('Court created:');
         pubsub.publish(SUB_TRIGGER, {

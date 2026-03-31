@@ -411,19 +411,21 @@ const RecordsPage = () => {
 
   if (sessionRecords.length === 0) {
     return (
-      <section className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl shadow-black/20">
-        <header className="mb-4">
-          <h3 className="text-base font-semibold text-white sm:text-lg">Session Records</h3>
-          <p className="mt-1 text-xs text-slate-300">
-            All session statistics
-          </p>
-        </header>
-        <div className="rounded-2xl border border-white/10 overflow-hidden">
-          <div className="px-4 py-6 text-center text-sm text-slate-300">
-            No session records yet.
+      <div className='py-5'>
+        <section className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl shadow-black/20">
+          <header className="mb-4">
+            <h3 className="text-base font-semibold text-white sm:text-lg">Session Records</h3>
+            <p className="mt-1 text-xs text-slate-300">
+              All session statistics
+            </p>
+          </header>
+          <div className="rounded-2xl border border-white/10 overflow-hidden">
+            <div className="px-4 py-6 text-center text-sm text-slate-300">
+              No session records yet.
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     )
   }
 
@@ -523,7 +525,7 @@ const RecordsPage = () => {
           <tbody className="divide-y divide-white/10">
             {filteredSessions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-xs text-slate-300">
+                <td colSpan={7} className="px-3 py-12 text-center align-middle text-xs text-slate-300">
                   No sessions found.
                 </td>
               </tr>

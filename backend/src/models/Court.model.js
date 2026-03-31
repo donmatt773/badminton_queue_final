@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const courtSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    surfaceType: {type: String,required: true,enum: ["WOODEN", "SYNTHETIC", "MAT", "CONCRETE"],},
+    surfaceType: {type: String,required: true,enum: ["WOODEN", "RUBBER"],},
     indoor: {type: Boolean,required: true,},
     description: {type: String,default: "",trim: true,},
     status: {type: String,required: true,

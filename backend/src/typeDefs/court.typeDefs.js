@@ -3,9 +3,7 @@ import gql from 'graphql-tag';
 const courtTypeDef = gql`
   enum CourtSurfaceType {
     WOODEN
-    SYNTHETIC
-    MAT
-    CONCRETE
+    RUBBER
   }
 
   enum CourtStatus {
