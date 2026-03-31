@@ -123,7 +123,7 @@ const QueuedMatchesTable = ({ matchQueue, sessions, players, courts, onEditMatch
   }, [currentPage, totalPages])
 
   function getCourtName(courtId) {
-    return courts?.find(c => c._id === courtId)?.name || 'Unknown Court'
+    return courts?.find(c => c._id === courtId)?.name || 'Waiting for Court'
   }
 
   function getPlayerNames(playerIds) {

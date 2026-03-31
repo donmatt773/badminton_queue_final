@@ -6,6 +6,7 @@ import SessionDetailPage from './components/SessionDetailPage'
 import EditMatchForm from './components/EditMatchForm'
 import CreateMatchForm from './components/CreateMatchForm'
 import Navbar from './components/Sidebar'
+import CourtsPage from './pages/CourtsPage'
 import DashboardPage from './pages/DashboardPage'
 import PlayersPage from './pages/PlayersPage'
 import OngoingMatchesPage from './pages/OngoingMatchesPage'
@@ -288,6 +289,7 @@ const COURTS_QUERY = gql`
       name
       surfaceType
       indoor
+      description
       status
     }
   }
@@ -302,6 +304,7 @@ const COURT_SUBSCRIPTION = gql`
         name
         surfaceType
         indoor
+        description
         status
       }
     }
@@ -434,8 +437,11 @@ const App = () => {
     onError: () => { refetch() },
   })
   const { data: ongoingMatchesData, refetch: refetchOngoingMatches } = useQuery(ONGOING_MATCHES_QUERY)
-  const { data: courtsData } = useQuery(COURTS_QUERY)
-  useSubscription(COURT_SUBSCRIPTION)
+  const { data: courtsData, refetch: refetchCourts } = useQuery(COURTS_QUERY)
+  useSubscription(COURT_SUBSCRIPTION, {
+    onData: () => { refetchCourts() },
+    onError: () => { refetchCourts() },
+  })
   const { data: ongoingMatchSubData } = useSubscription(ONGOING_MATCHES_SUBSCRIPTION, {
     onError: () => { refetchOngoingMatches() },
   })
@@ -471,6 +477,7 @@ const App = () => {
   const [recordGame, { loading: recordGameLoading }] = useMutation(RECORD_GAME_MUTATION)
   const [updateMatch] = useMutation(UPDATE_MATCH_MUTATION)
   const [startQueuedMatch] = useMutation(START_QUEUED_MATCH_MUTATION)
+
 
   const players = playersData?.players || []
 
@@ -1160,6 +1167,9 @@ const App = () => {
           <RecordsPage
             onViewSession={handleViewSession}
           />
+        )}
+        {currentPage === 'courts' && (
+          <CourtsPage />
         )}
         </main>
       </div>

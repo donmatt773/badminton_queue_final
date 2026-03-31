@@ -14,7 +14,7 @@ const BadmintonCourt = ({ match, players, courts, preview = false, fullscreen = 
   const getPlayerName = (playerId) => {
     return players?.find(p => p._id === playerId)?.name || 'Unknown'
   }
-
+  
   const getCourtName = (courtId) => {
     return courts?.find(c => c._id === courtId)?.name || 'Court'
   }
