@@ -158,7 +158,7 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
       style={style}
       {...listeners}
       {...attributes}
-      className={`group relative cursor-grab active:cursor-grabbing select-none rounded border px-1 py-0.5 text-center transition ${getSkillColor()}`}
+      className={`group relative cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
     >
       {hasTeammateIndicator && (
         <TeammateIndicator
@@ -167,11 +167,11 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
           tooltipClassName="right-0 top-4"
         />
       )}
-      <p className="truncate text-xs font-semibold text-white leading-tight">{player.name}</p>
-      <p className="text-[8px] text-slate-400 leading-tight">{player.playerLevel}</p>
-      <p className="text-[7px] text-slate-500 leading-tight">{player.gender}</p>
-      {isAssignedToTeam && <p className="mt-0.5 text-[8px] text-emerald-400 leading-tight">● In Team</p>}
-      {isInUse && !isAssignedToTeam && <p className="mt-0.5 text-[8px] text-amber-400 leading-tight">● In Match/Queue</p>}
+      <p className="truncate text-sm font-semibold text-white leading-tight">{player.name?.toUpperCase()}</p>
+      <p className="text-[10px] text-slate-400 leading-tight">{player.playerLevel}</p>
+      <p className="text-[9px] text-slate-500 leading-tight">{player.gender}</p>
+      {isAssignedToTeam && <p className="mt-0.5 text-[9px] text-emerald-400 leading-tight">● In Team</p>}
+      {isInUse && !isAssignedToTeam && <p className="mt-0.5 text-[9px] text-amber-400 leading-tight">● In Match/Queue</p>}
     </div>
   );
 };
@@ -667,12 +667,17 @@ const CreateMatchForm = ({
     );
   }
 
-  // Pagination for players
-  const totalPlayerPages = Math.max(1, Math.ceil(unselectedPlayers.length / PLAYERS_PER_PAGE));
+  // Alphabet-based pagination: 3 letters per page
+  const allLetterGroups = [...new Set(
+    unselectedPlayers.map((p) => (p.name?.[0] || '#').toUpperCase())
+  )].sort();
+  const totalPlayerPages = Math.max(1, Math.ceil(allLetterGroups.length / 3));
   const clampedPlayerPage = Math.min(currentPlayerPage, totalPlayerPages - 1);
-  const startPlayerIndex = Math.max(0, clampedPlayerPage) * PLAYERS_PER_PAGE;
-  const endPlayerIndex = startPlayerIndex + PLAYERS_PER_PAGE;
-  const pagedPlayers = unselectedPlayers.slice(startPlayerIndex, endPlayerIndex);
+  const pageLetters = allLetterGroups.slice(clampedPlayerPage * 3, clampedPlayerPage * 3 + 3);
+  const pageLetterSet = new Set(pageLetters);
+  const pagedPlayers = unselectedPlayers.filter((p) =>
+    pageLetterSet.has((p.name?.[0] || '#').toUpperCase())
+  );
 
   const visiblePlayerPages = useMemo(() => {
     const activePage = clampedPlayerPage + 1;
@@ -1242,13 +1247,13 @@ const CreateMatchForm = ({
                                     : 'border-slate-300/40 text-slate-200 hover:bg-slate-500/10'
                                 }`}
                               >
-                                {item}
+                                {allLetterGroups.slice((item - 1) * 3, (item - 1) * 3 + 3).join('·')}
                               </button>
                             );
                           })}
                         </div>
                         <span>
-                          Page {currentPlayerPage + 1} / {totalPlayerPages}
+                          {pageLetters[0]}{pageLetters.length > 1 ? ` – ${pageLetters[pageLetters.length - 1]}` : ''}
                         </span>
                         <button
                           type="button"
@@ -1261,22 +1266,39 @@ const CreateMatchForm = ({
                       </div>
                     )}
                   </div>
-                  <div className="mb-3 grid grid-cols-3 gap-1.5 md:grid-cols-5">
+                  <div className="mb-3 space-y-2">
                     {pagedPlayers.length > 0 ? (
-                      pagedPlayers.map((player) => {
-                        const teammateNames = teammateNamesByPlayerId.get(String(player._id)) || [];
-                        return (
-                        <DraggablePlayer
-                          key={player._id}
-                          player={player}
-                          isInUse={playersInUseSet.has(player._id)}
-                          isAssignedToTeam={team1.includes(player._id) || team2.includes(player._id)}
-                          teammateNames={teammateNames}
-                        />
-                        );
-                      })
+                      Object.entries(
+                        pagedPlayers.reduce((groups, player) => {
+                          const letter = (player.name?.[0] || '#').toUpperCase()
+                          if (!groups[letter]) groups[letter] = []
+                          groups[letter].push(player)
+                          return groups
+                        }, {})
+                      ).map(([letter, group]) => (
+                        <div key={letter}>
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-widest text-slate-500">{letter}</span>
+                            <div className="h-px flex-1 bg-white/10" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                            {group.map((player) => {
+                              const teammateNames = teammateNamesByPlayerId.get(String(player._id)) || [];
+                              return (
+                                <DraggablePlayer
+                                  key={player._id}
+                                  player={player}
+                                  isInUse={playersInUseSet.has(player._id)}
+                                  isAssignedToTeam={team1.includes(player._id) || team2.includes(player._id)}
+                                  teammateNames={teammateNames}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      <div className="col-span-3 rounded border border-white/10 bg-white/5 p-2 text-center text-xs text-slate-400 md:col-span-5">
+                      <div className="rounded border border-white/10 bg-white/5 p-2 text-center text-xs text-slate-400">
                         No players available
                       </div>
                     )}
@@ -1428,7 +1450,7 @@ const CreateMatchForm = ({
       <DragOverlay>
         {activeDragId && activeDragPlayer ? (
           <div className="cursor-grabbing rounded-lg border border-emerald-500/50 bg-emerald-500/20 p-2 text-center shadow-lg">
-            <p className="truncate text-xs font-semibold text-white">{activeDragPlayer.name}</p>
+            <p className="truncate text-xs font-semibold text-white">{activeDragPlayer.name?.toUpperCase()}</p>
             <p className="text-[10px] text-slate-300">{activeDragPlayer.playerLevel}</p>
           </div>
         ) : null}

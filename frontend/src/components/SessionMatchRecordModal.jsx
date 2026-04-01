@@ -132,7 +132,7 @@ const SessionMatchRecordModal = ({ sessionId, sessionIds = [], sessions = [], se
   }, [allData?.gamesBySessionIds, isAllSessionsMode, sessionId, sessionIds, singleData?.gamesBySession, subData?.gameSub?.game])
 
   const playerNameById = useMemo(
-    () => new Map((players || []).map((player) => [String(player._id), player.name || 'Unknown'])),
+    () => new Map((players || []).map((player) => [String(player._id), (player.name || 'Unknown').toUpperCase()])),
     [players]
   )
 

@@ -441,7 +441,7 @@ const PaymentsPage = ({
         rows.push({
           id: `${normalizeId(paymentDoc?._id)}-${normalizedPlayerId}`,
           sessionName,
-          playerName: playerNameById.get(normalizedPlayerId) || 'Unknown Player',
+          playerName: (playerNameById.get(normalizedPlayerId) || 'Unknown Player').toUpperCase(),
           gamesPlayed,
           total,
           status,
@@ -701,7 +701,7 @@ const PaymentsPage = ({
                   </td>
                   <td className="px-4 py-3 text-slate-400">{startIndex + index + 1}</td>
                   <td className="px-4 py-3">
-                    <span className="font-medium text-white">{player.name}</span>
+                    <span className="font-medium text-white">{player.name?.toUpperCase()}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
@@ -1259,7 +1259,7 @@ const PaymentsPage = ({
             <div className="space-y-4 px-5 py-6">
               <div className="text-center">
                 <p className="text-xs text-slate-400">Player Name</p>
-                <p className="text-base font-semibold text-white">{receiptPlayer.name}</p>
+                <p className="text-base font-semibold text-white">{receiptPlayer.name?.toUpperCase()}</p>
               </div>
 
               <div className="rounded-lg border border-white/10 bg-white/5 p-4">

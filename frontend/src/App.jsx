@@ -613,6 +613,16 @@ const App = () => {
         .map((id) => String(id))
     )
 
+    // Courts claimed by court-assigned queued matches must not be double-assigned to floating matches
+    const allQueuedMatches = Object.values(matchQueue).flat()
+    const queueReservedCourtIdSet = new Set(
+      allQueuedMatches
+        .filter((m) => m?.courtId)
+        .map((m) => String(m.courtId))
+    )
+    // Prevent double-assignment of the same court to two floating matches in the same effect run
+    const courtsAssignedThisRun = new Set()
+
     Object.entries(matchQueue).forEach(([, queue]) => {
       if (!queue || queue.length === 0) return
 
@@ -681,7 +691,11 @@ const App = () => {
       }
 
       const freeCourt = allCourts.find(
-        (c) => sessionCourtIdSet.has(String(c._id)) && !occupiedCourtIdSet.has(String(c._id))
+        (c) =>
+          sessionCourtIdSet.has(String(c._id)) &&
+          !occupiedCourtIdSet.has(String(c._id)) &&
+          !queueReservedCourtIdSet.has(String(c._id)) &&
+          !courtsAssignedThisRun.has(String(c._id))
       )
 
       if (!freeCourt) {
@@ -704,6 +718,7 @@ const App = () => {
       }
 
       startingQueuedIds.current.add(floatingMatch._id)
+      courtsAssignedThisRun.add(String(freeCourt._id))
       startQueuedMatch({
         variables: { id: floatingMatch._id, courtId: freeCourt._id }
       }).catch((err) => {

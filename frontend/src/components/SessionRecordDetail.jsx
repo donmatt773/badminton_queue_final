@@ -250,7 +250,7 @@ const SessionRecordDetail = ({ sessionId, onClose }) => {
         wins,
         losses,
         winRate,
-        name: player?.name || 'Unknown'
+        name: (player?.name || 'Unknown').toUpperCase()
       }
     })
   }, [allPlayerIds, gamesData?.gamesBySession, players, billingByPlayer, gamesPlayedByPlayer, hasBillingSnapshot])
@@ -293,7 +293,7 @@ const SessionRecordDetail = ({ sessionId, onClose }) => {
 
       return {
         playerId,
-        playerName: player?.name || 'Unknown',
+        playerName: (player?.name || 'Unknown').toUpperCase(),
         gamesPlayed,
         status,
         amountDue,
@@ -743,11 +743,11 @@ const SessionRecordDetail = ({ sessionId, onClose }) => {
                       return paginatedMatches.map(game => {
                         const winnerIds = Array.isArray(game.winnerPlayerIds) ? game.winnerPlayerIds : []
                         const hasWinnerData = winnerIds.length > 0
-                        const winners = winnerIds.map(wId => players.find(p => String(p._id) === String(wId))?.name || 'Unknown').join(' / ')
-                        const losers = game.players.filter(pId => !winnerIds.includes(pId)).map(pId => players.find(p => String(p._id) === String(pId))?.name || 'Unknown').join(' / ')
+                        const winners = winnerIds.map(wId => (players.find(p => String(p._id) === String(wId))?.name || 'Unknown').toUpperCase()).join(' / ')
+                        const losers = game.players.filter(pId => !winnerIds.includes(pId)).map(pId => (players.find(p => String(p._id) === String(pId))?.name || 'Unknown').toUpperCase()).join(' / ')
                         const midpoint = Math.floor((game.players || []).length / 2)
-                        const teamA = (game.players || []).slice(0, midpoint).map(pId => players.find(p => String(p._id) === String(pId))?.name || 'Unknown').join(' / ')
-                        const teamB = (game.players || []).slice(midpoint).map(pId => players.find(p => String(p._id) === String(pId))?.name || 'Unknown').join(' / ')
+                        const teamA = (game.players || []).slice(0, midpoint).map(pId => (players.find(p => String(p._id) === String(pId))?.name || 'Unknown').toUpperCase()).join(' / ')
+                        const teamB = (game.players || []).slice(midpoint).map(pId => (players.find(p => String(p._id) === String(pId))?.name || 'Unknown').toUpperCase()).join(' / ')
                         const court = courts.find(c => String(c._id) === String(game.courtId))
 
                         return (

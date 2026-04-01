@@ -202,7 +202,7 @@ const PlayerRow = React.memo(({
         >
           <div className="flex items-center justify-between sm:justify-start">
             <div className="flex flex-col">
-              <span>{player.name}</span>
+              <span>{player.name?.toUpperCase()}</span>
               {/* Mobile stats preview */}
               <span className="sm:hidden text-slate-400 text-xs mt-0.5">
                 {player.playCount || 0} games • {player.winCount || 0}W • {player.lossCount || 0}L
@@ -1299,7 +1299,7 @@ const PlayersPage = ({ onPlayersUpdated, ongoingMatches = {}, matchQueue = {} })
                 ) : (
                   deletedPlayersState.map((player) => (
                     <tr key={player._id} className="border-b border-white/10 opacity-70 transition hover:bg-white/5 hover:opacity-100">
-                      <td className="px-3.5 py-2 text-sm font-medium text-slate-300">{player.name}</td>
+                      <td className="px-3.5 py-2 text-sm font-medium text-slate-300">{player.name?.toUpperCase()}</td>
                       <td className="hidden px-3.5 py-2 sm:table-cell">
                         <span className="inline-flex items-center rounded-full bg-slate-800/50 px-2 py-0.5 text-xs text-slate-200">
                           {player.gender === 'MALE' ? '♂ Male' : player.gender === 'FEMALE' ? '♀ Female' : '—'}
