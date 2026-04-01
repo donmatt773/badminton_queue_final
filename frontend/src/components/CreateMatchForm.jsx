@@ -169,9 +169,10 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
       )}
       <p className="truncate text-sm font-semibold text-white leading-tight">{player.name?.toUpperCase()}</p>
       <p className="text-[10px] text-slate-400 leading-tight">{player.playerLevel}</p>
+      <p className="text-[9px] text-slate-400 leading-tight">Played: {player.gamesPlayed ?? 0}</p>
       <p className="text-[9px] text-slate-500 leading-tight">{player.gender}</p>
       {isAssignedToTeam && <p className="mt-0.5 text-[9px] text-emerald-400 leading-tight">● In Team</p>}
-      {isInUse && !isAssignedToTeam && <p className="mt-0.5 text-[9px] text-amber-400 leading-tight">● In Match/Queue</p>}
+      {isInUse && !isAssignedToTeam && <p className="mt-0.5 text-[9px] text-amber-400 leading-tight animate-pulse">● In Match/Queue</p>}
     </div>
   );
 };
@@ -1258,8 +1259,14 @@ const CreateMatchForm = ({
                             );
                           })}
                         </div>
-                        <span>
-                          {pageLetters[0]}{pageLetters.length > 1 ? ` – ${pageLetters[pageLetters.length - 1]}` : ''}
+                        <span className="inline-flex min-w-[1.5rem] flex-col items-center leading-none">
+                          <span>{pageLetters[0]}</span>
+                          {pageLetters.length > 1 && (
+                            <>
+                              <span>-</span>
+                              <span>{pageLetters[pageLetters.length - 1]}</span>
+                            </>
+                          )}
                         </span>
                         <button
                           type="button"
@@ -1331,6 +1338,7 @@ const CreateMatchForm = ({
                         <div className="space-y-1.5">
                           {team1.map((playerId) => {
                             const player = playersInSession.find(p => p._id === playerId);
+                            const playerLevel = player?.playerLevel || "No Skill Level Assinged";
                             const teammateNames = teammateNamesByPlayerId.get(String(playerId)) || [];
                             const teammateTooltip = buildTeammateTooltip(teammateNames);
                             return (
@@ -1346,9 +1354,11 @@ const CreateMatchForm = ({
                                   />
                                 )}
                                 <div className="text-[11px] text-white">
-                                  <div className="font-semibold leading-tight">{getPlayerName(playerId)}</div>
-                                  <div className={`text-[8px] ${getSkillLevelTextColor(player?.playerLevel)} leading-tight`}>
-                                    {player?.playerLevel}
+                                  <div className="font-semibold leading-tight">
+                                    {getPlayerName(playerId)?.toUpperCase()}
+                                    <span className={`ml-1 ${getSkillLevelTextColor(playerLevel)}`}>
+                                      - {playerLevel}
+                                    </span>
                                   </div>
                                 </div>
                                 <button
@@ -1389,6 +1399,7 @@ const CreateMatchForm = ({
                         <div className="space-y-1.5">
                           {team2.map((playerId) => {
                             const player = playersInSession.find(p => p._id === playerId);
+                            const playerLevel = player?.playerLevel || "N/A";
                             const teammateNames = teammateNamesByPlayerId.get(String(playerId)) || [];
                             const teammateTooltip = buildTeammateTooltip(teammateNames);
                             return (
@@ -1404,9 +1415,11 @@ const CreateMatchForm = ({
                                   />
                                 )}
                                 <div className="text-[11px] text-white">
-                                  <div className="font-semibold leading-tight">{getPlayerName(playerId)}</div>
-                                  <div className={`text-[8px] ${getSkillLevelTextColor(player?.playerLevel)} leading-tight`}>
-                                    {player?.playerLevel}
+                                  <div className="font-semibold leading-tight">
+                                    {getPlayerName(playerId)?.toUpperCase()}
+                                    <span className={`ml-1 ${getSkillLevelTextColor(playerLevel)}`}>
+                                      - {playerLevel}
+                                    </span>
                                   </div>
                                 </div>
                                 <button

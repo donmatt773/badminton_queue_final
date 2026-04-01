@@ -12,7 +12,7 @@ const BadmintonCourt = ({ match, players, courts, preview = false, fullscreen = 
   }
 
   const getPlayerName = (playerId) => {
-    return players?.find(p => p._id === playerId)?.name || 'Unknown'
+    return (players?.find(p => p._id === playerId)?.name || 'Unknown').toUpperCase()
   }
   
   const getCourtName = (courtId) => {

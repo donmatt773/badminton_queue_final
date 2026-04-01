@@ -88,6 +88,7 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam }) => {
     >
       <p className="truncate text-sm font-semibold text-white leading-tight">{player.name?.toUpperCase()}</p>
       <p className="text-[10px] text-slate-400 leading-tight">{player.playerLevel}</p>
+      <p className="text-[9px] text-slate-400 leading-tight">Played: {player.gamesPlayed ?? 0}</p>
       <p className="text-[9px] text-slate-500 leading-tight">{player.gender}</p>
       {isAssignedToTeam && <p className="mt-0.5 text-[9px] text-emerald-400 leading-tight">● In Team</p>}
       {isInUse && !isAssignedToTeam && <p className="mt-0.5 text-[9px] text-amber-400 leading-tight">● In Match/Queue</p>}
@@ -318,7 +319,7 @@ const EditMatchForm = ({
   const getPlayerLevel = (playerId) => {
     return playersInSession.find(p => p._id === playerId)?.playerLevel
       || players?.find(p => p._id === playerId)?.playerLevel
-      || 'N/A'
+      || 'No Skill Level Assigned'
   }
 
   const getCourtName = (courtId) => {
@@ -339,7 +340,10 @@ const EditMatchForm = ({
   const sessionPlayerIds = new Set(selectedSession?.players?.map((sessionPlayer) => sessionPlayer.playerId) || [])
   const playersInSession = selectedSession?.players
     ? selectedSession.players
-        .map((sessionPlayer) => players?.find((player) => player._id === sessionPlayer.playerId))
+        .map((sessionPlayer) => {
+          const fullPlayer = players?.find((player) => player._id === sessionPlayer.playerId)
+          return fullPlayer ? { ...fullPlayer, gamesPlayed: sessionPlayer.gamesPlayed } : null
+        })
         .filter(Boolean)
     : []
   const normalizedAddPlayerSearch = debouncedAddPlayerSearch.trim().toLowerCase()
@@ -933,9 +937,9 @@ const EditMatchForm = ({
                             className="flex items-center justify-between rounded border border-blue-300/30 bg-blue-500/10 px-1.5 py-0.5"
                           >
                             <div className="text-[11px] text-white">
-                              <div className="font-semibold leading-tight">{getPlayerName(playerId)}</div>
-                              <div className="text-[8px] text-blue-300 leading-tight">
-                                {getPlayerLevel(playerId)}
+                              <div className="font-semibold leading-tight">
+                                {getPlayerName(playerId)?.toUpperCase()}
+                                <span className="ml-1 text-blue-300">- {getPlayerLevel(playerId)}</span>
                               </div>
                             </div>
                             <button
@@ -974,9 +978,9 @@ const EditMatchForm = ({
                             className="flex items-center justify-between rounded border border-rose-300/30 bg-rose-500/10 px-1.5 py-0.5"
                           >
                             <div className="text-[11px] text-white">
-                              <div className="font-semibold leading-tight">{getPlayerName(playerId)}</div>
-                              <div className="text-[8px] text-rose-300 leading-tight">
-                                {getPlayerLevel(playerId)}
+                              <div className="font-semibold leading-tight">
+                                {getPlayerName(playerId)?.toUpperCase()}
+                                <span className="ml-1 text-rose-300">- {getPlayerLevel(playerId)}</span>
                               </div>
                             </div>
                             <button

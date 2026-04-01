@@ -39,6 +39,7 @@ const PaymentsPage = ({
   const [selectedPlayerForFinish, setSelectedPlayerForFinish] = useState(null)
   const [showNoPaymentConfirm, setShowNoPaymentConfirm] = useState(false)
   const [showPaymentConfirm, setShowPaymentConfirm] = useState(false)
+  const [paymentGamesInput, setPaymentGamesInput] = useState('')
   const [showReceipt, setShowReceipt] = useState(false)
   const [receiptPlayer, setReceiptPlayer] = useState(null)
   const [finishedPlayers, setFinishedPlayers] = useState(new Set())
@@ -46,6 +47,7 @@ const PaymentsPage = ({
   const [selectedPlayersForBatch, setSelectedPlayersForBatch] = useState(new Set())
   const [showBatchPaymentConfirm, setShowBatchPaymentConfirm] = useState(false)
   const [batchPaymentData, setBatchPaymentData] = useState(null)
+  const [batchPaymentGamesInput, setBatchPaymentGamesInput] = useState({})
   const [showBatchNoPaymentConfirm, setShowBatchNoPaymentConfirm] = useState(false)
   const [showBatchPaymentConfirmation, setShowBatchPaymentConfirmation] = useState(false)
   const [showBatchReceipt, setShowBatchReceipt] = useState(false)
@@ -269,6 +271,7 @@ const PaymentsPage = ({
         playerName: player.name,
         games: summary.totalGames,
         amount: summary.totalAmount,
+        rows: summary.rows,
       })
       totalGames += summary.totalGames
       totalAmount += summary.totalAmount
@@ -285,6 +288,11 @@ const PaymentsPage = ({
     if (selectedPlayersForBatch.size === 0) return
     const batchData = buildBatchPaymentSummary(Array.from(selectedPlayersForBatch))
     setBatchPaymentData(batchData)
+    const initialGamesInput = {}
+    batchData.playerDetails.forEach((detail) => {
+      initialGamesInput[detail.playerId] = String(detail.games)
+    })
+    setBatchPaymentGamesInput(initialGamesInput)
     setShowBatchPaymentConfirm(true)
   }
 
@@ -329,6 +337,74 @@ const PaymentsPage = ({
   }, [ongoingMatches, matchQueue])
 
   const isPlayerInActiveMatch = (playerId) => activeOrQueuedPlayerIds.has(normalizeId(playerId))
+
+  const adjustedBatchPaymentSummary = useMemo(() => {
+    if (!batchPaymentData) return null
+
+    const adjustedPlayerDetails = batchPaymentData.playerDetails.map((detail) => {
+      const maxGames = Number(detail.games || 0)
+      const parsedInput = Number.parseInt(batchPaymentGamesInput[detail.playerId], 10)
+      const requestedGames = Number.isFinite(parsedInput) ? parsedInput : 0
+      const paidGames = Math.min(Math.max(requestedGames, 0), maxGames)
+
+      let remaining = paidGames
+      const adjustedRows = (detail.rows || []).map((row) => {
+        const paidGameCount = Math.max(0, Math.min(Number(row.gameCount || 0), remaining))
+        remaining -= paidGameCount
+        return {
+          ...row,
+          paidGameCount,
+          subtotal: paidGameCount * Number(row.price || 0),
+        }
+      })
+
+      const amount = adjustedRows.reduce((sum, row) => sum + row.subtotal, 0)
+
+      return {
+        ...detail,
+        maxGames,
+        paidGames,
+        amount,
+        rows: adjustedRows,
+      }
+    })
+
+    return {
+      playerDetails: adjustedPlayerDetails,
+      totalGames: adjustedPlayerDetails.reduce((sum, detail) => sum + detail.paidGames, 0),
+      totalAmount: adjustedPlayerDetails.reduce((sum, detail) => sum + detail.amount, 0),
+    }
+  }, [batchPaymentData, batchPaymentGamesInput])
+
+  const adjustedSinglePaymentSummary = useMemo(() => {
+    if (!selectedPlayerForFinish?.paymentSummary) return null
+
+    const baseSummary = selectedPlayerForFinish.paymentSummary
+    const maxGames = Number(baseSummary.totalGames || 0)
+    const parsedInput = Number.parseInt(paymentGamesInput, 10)
+    const requestedGames = Number.isFinite(parsedInput) ? parsedInput : 0
+    const clampedGames = Math.min(Math.max(requestedGames, 0), maxGames)
+
+    let remaining = clampedGames
+    const adjustedRows = baseSummary.rows.map((row) => {
+      const paidGameCount = Math.max(0, Math.min(Number(row.gameCount || 0), remaining))
+      remaining -= paidGameCount
+      return {
+        ...row,
+        paidGameCount,
+        subtotal: paidGameCount * Number(row.price || 0),
+      }
+    })
+
+    const totalAmount = adjustedRows.reduce((sum, row) => sum + row.subtotal, 0)
+
+    return {
+      maxGames,
+      totalGames: clampedGames,
+      rows: adjustedRows,
+      totalAmount,
+    }
+  }, [selectedPlayerForFinish, paymentGamesInput])
 
   // Keep batch selection valid when live queue/match data changes.
   React.useEffect(() => {
@@ -723,6 +799,7 @@ const PaymentsPage = ({
                     <button
                       onClick={() => {
                         const paymentSummary = buildPaymentSummary(player.id)
+                        setPaymentGamesInput(String(paymentSummary.totalGames || 0))
                         setSelectedPlayerForFinish({ ...player, paymentSummary })
                       }}
                       disabled={isPlayerInActiveMatch(player.id)}
@@ -956,11 +1033,11 @@ const PaymentsPage = ({
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <p className="mb-2 text-xs text-slate-400">Payment Calculation</p>
                 <div className="space-y-2">
-                  {selectedPlayerForFinish.paymentSummary.rows.map((row) => (
+                  {(adjustedSinglePaymentSummary?.rows || selectedPlayerForFinish.paymentSummary.rows).map((row) => (
                     <div key={row.sessionId} className="rounded-md border border-white/10 px-3 py-2">
                       <p className="text-xs font-semibold text-white">{row.sessionName}</p>
                       <p className="mt-1 text-xs text-slate-300">
-                        {row.gameCount} x {row.price.toFixed(2)} ={' '}
+                        {(row.paidGameCount ?? row.gameCount)} x {row.price.toFixed(2)} ={' '}
                         <span className="font-semibold text-emerald-200">{row.subtotal.toFixed(2)}</span>
                       </p>
                     </div>
@@ -969,19 +1046,40 @@ const PaymentsPage = ({
               </div>
 
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <label htmlFor="checkout-paid-games-input" className="mb-1 block text-xs text-slate-400">
+                  Games To Pay (max {adjustedSinglePaymentSummary?.maxGames ?? selectedPlayerForFinish.paymentSummary.totalGames ?? 0})
+                </label>
+                <input
+                  id="checkout-paid-games-input"
+                  type="number"
+                  min={0}
+                  max={adjustedSinglePaymentSummary?.maxGames ?? selectedPlayerForFinish.paymentSummary.totalGames ?? 0}
+                  value={paymentGamesInput}
+                  onChange={(e) => setPaymentGamesInput(e.target.value)}
+                  className="w-full rounded border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white focus:border-white/30 focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-slate-400">
+                  You can pay any number from 0 to {adjustedSinglePaymentSummary?.maxGames ?? selectedPlayerForFinish.paymentSummary.totalGames ?? 0} games.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <p className="text-xs text-slate-200">
-                  Total Games: <span className="font-semibold text-white">{selectedPlayerForFinish.paymentSummary.totalGames}</span>
+                  Total Games: <span className="font-semibold text-white">{adjustedSinglePaymentSummary?.totalGames ?? selectedPlayerForFinish.paymentSummary.totalGames}</span>
                 </p>
                 <p className="mt-2 text-xs text-slate-200">
                   Total Payment:{' '}
-                  <span className="font-semibold text-emerald-200">{selectedPlayerForFinish.paymentSummary.totalAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-emerald-200">{(adjustedSinglePaymentSummary?.totalAmount ?? selectedPlayerForFinish.paymentSummary.totalAmount).toFixed(2)}</span>
                 </p>
               </div>
             </div>
 
             <div className="flex gap-2 border-t border-white/10 px-5 py-4">
               <button
-                onClick={() => setSelectedPlayerForFinish(null)}
+                onClick={() => {
+                  setSelectedPlayerForFinish(null)
+                  setPaymentGamesInput('')
+                }}
                 className="flex-1 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/5 hover:text-white"
               >
                 Cancel
@@ -999,7 +1097,10 @@ const PaymentsPage = ({
                 Finish Without Payment
               </button>
               <button
-                onClick={() => setShowPaymentConfirm(true)}
+                onClick={() => {
+                  setPaymentGamesInput(String(selectedPlayerForFinish.paymentSummary.totalGames || 0))
+                  setShowPaymentConfirm(true)
+                }}
                 disabled={isPlayerInActiveMatch(selectedPlayerForFinish.id)}
                 title={isPlayerInActiveMatch(selectedPlayerForFinish.id) ? 'Player is currently in a match or queue' : ''}
                 className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
@@ -1050,6 +1151,7 @@ const PaymentsPage = ({
                   setFinishedPlayers((prev) => new Set([...prev, normalizeId(playerId)]))
                   setShowNoPaymentConfirm(false)
                   setSelectedPlayerForFinish(null)
+                  setPaymentGamesInput('')
                 }}
                 className="flex-1 rounded-lg bg-orange-500/20 px-3 py-2 text-xs font-semibold text-orange-200 transition hover:bg-orange-500/30"
               >
@@ -1076,23 +1178,44 @@ const PaymentsPage = ({
               </div>
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <p className="mb-2 text-xs text-slate-400">Payment Summary</p>
-                {selectedPlayerForFinish.paymentSummary.rows.map((row) => (
+                {adjustedSinglePaymentSummary?.rows.map((row) => (
                   <p key={row.sessionId} className="mb-1 text-xs text-slate-300">
-                    {row.sessionName}: {row.gameCount} x {row.price.toFixed(2)} ={' '}
+                    {row.sessionName}: {row.paidGameCount} x {row.price.toFixed(2)} ={' '}
                     <span className="font-semibold text-emerald-200">{row.subtotal.toFixed(2)}</span>
                   </p>
                 ))}
                 <div className="mt-2 border-t border-white/10 pt-2">
                   <p className="text-xs text-white">
-                    Total: <span className="font-semibold text-emerald-200">{selectedPlayerForFinish.paymentSummary.totalAmount.toFixed(2)}</span>
+                    Total: <span className="font-semibold text-emerald-200">{adjustedSinglePaymentSummary?.totalAmount.toFixed(2)}</span>
                   </p>
                 </div>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                <label htmlFor="paid-games-input" className="mb-1 block text-xs text-slate-400">
+                  Games To Pay (max {adjustedSinglePaymentSummary?.maxGames ?? 0})
+                </label>
+                <input
+                  id="paid-games-input"
+                  type="number"
+                  min={0}
+                  max={adjustedSinglePaymentSummary?.maxGames ?? 0}
+                  value={paymentGamesInput}
+                  onChange={(e) => setPaymentGamesInput(e.target.value)}
+                  className="w-full rounded border border-white/10 bg-slate-800 px-2 py-1 text-xs text-white focus:border-white/30 focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-slate-400">
+                  You can pay any number from 0 to {adjustedSinglePaymentSummary?.maxGames ?? 0} games.
+                </p>
               </div>
             </div>
 
             <div className="flex gap-2 border-t border-white/10 px-5 py-4">
               <button
-                onClick={() => setShowPaymentConfirm(false)}
+                onClick={() => {
+                  setShowPaymentConfirm(false)
+                  setPaymentGamesInput('')
+                }}
                 className="flex-1 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/5 hover:text-white"
               >
                 No
@@ -1101,12 +1224,28 @@ const PaymentsPage = ({
                 onClick={() => {
                   const playerId = selectedPlayerForFinish.id
                   const sessionsToRemoveFrom = selectedPlayerForFinish.paymentSummary.rows.map((row) => row.sessionId)
-                  const receiptData = { ...selectedPlayerForFinish }
+                  const receiptData = {
+                    ...selectedPlayerForFinish,
+                    paymentSummary: {
+                      ...selectedPlayerForFinish.paymentSummary,
+                      rows: (adjustedSinglePaymentSummary?.rows || []).map((row) => ({
+                        ...row,
+                        gameCount: row.paidGameCount,
+                      })),
+                      totalGames: adjustedSinglePaymentSummary?.totalGames ?? 0,
+                      totalAmount: adjustedSinglePaymentSummary?.totalAmount ?? 0,
+                    },
+                  }
                   if (onFinishPlayer) {
-                    onFinishPlayer(playerId, { isExempted: false, sessionsToRemoveFrom })
+                    onFinishPlayer(playerId, {
+                      isExempted: false,
+                      sessionsToRemoveFrom,
+                      paidGames: adjustedSinglePaymentSummary?.totalGames ?? 0,
+                    })
                   }
                   setFinishedPlayers((prev) => new Set([...prev, normalizeId(playerId)]))
                   setShowPaymentConfirm(false)
+                  setPaymentGamesInput('')
                   setReceiptPlayer(receiptData)
                   setSelectedPlayerForFinish(null)
                   setShowReceipt(true)
@@ -1132,11 +1271,28 @@ const PaymentsPage = ({
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <p className="text-xs text-slate-400 mb-3">Selected Players</p>
                 <div className="space-y-2">
-                  {batchPaymentData.playerDetails.map((detail) => (
+                  {adjustedBatchPaymentSummary?.playerDetails.map((detail) => (
                     <div key={detail.playerId} className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2">
-                      <div>
+                      <div className="min-w-0 flex-1 pr-3">
                         <p className="text-xs font-semibold text-white">{detail.playerName}</p>
-                        <p className="text-[10px] text-slate-400">{detail.games} games</p>
+                        <p className="text-[10px] text-slate-400">Max: {detail.maxGames} games</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <label htmlFor={`batch-paid-games-${detail.playerId}`} className="text-[10px] text-slate-400">
+                            Pay:
+                          </label>
+                          <input
+                            id={`batch-paid-games-${detail.playerId}`}
+                            type="number"
+                            min={0}
+                            max={detail.maxGames}
+                            value={batchPaymentGamesInput[detail.playerId] ?? String(detail.maxGames)}
+                            onChange={(e) => {
+                              const nextValue = e.target.value
+                              setBatchPaymentGamesInput((prev) => ({ ...prev, [detail.playerId]: nextValue }))
+                            }}
+                            className="w-20 rounded border border-white/10 bg-slate-800 px-2 py-1 text-[10px] text-white focus:border-white/30 focus:outline-none"
+                          />
+                        </div>
                       </div>
                       <p className="text-xs font-semibold text-emerald-200">₱{detail.amount.toFixed(2)}</p>
                     </div>
@@ -1147,11 +1303,11 @@ const PaymentsPage = ({
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <div className="flex justify-between mb-2">
                   <span className="text-xs text-slate-200">Total Games:</span>
-                  <span className="text-xs font-semibold text-white">{batchPaymentData.totalGames}</span>
+                  <span className="text-xs font-semibold text-white">{adjustedBatchPaymentSummary?.totalGames ?? 0}</span>
                 </div>
                 <div className="flex justify-between border-t border-white/10 pt-2">
                   <span className="text-xs text-slate-200">Total Amount:</span>
-                  <span className="text-sm font-semibold text-emerald-200">₱{batchPaymentData.totalAmount.toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-emerald-200">₱{(adjustedBatchPaymentSummary?.totalAmount ?? 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -1161,6 +1317,7 @@ const PaymentsPage = ({
                 onClick={() => {
                   setShowBatchPaymentConfirm(false)
                   setBatchPaymentData(null)
+                  setBatchPaymentGamesInput({})
                 }}
                 className="flex-1 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/5 hover:text-white"
               >
@@ -1314,7 +1471,7 @@ const PaymentsPage = ({
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <p className="mb-2 text-xs text-slate-400">Selected Players</p>
                 <div className="space-y-2">
-                  {batchPaymentData.playerDetails.map((detail) => (
+                  {adjustedBatchPaymentSummary?.playerDetails.map((detail) => (
                     <div key={detail.playerId} className="flex items-center justify-between text-xs">
                       <p className="text-white font-semibold">{detail.playerName}</p>
                       <p className="text-emerald-200">₱{detail.amount.toFixed(2)}</p>
@@ -1325,7 +1482,7 @@ const PaymentsPage = ({
               <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                 <div className="flex justify-between text-xs text-slate-200">
                   <span>Total Payment:</span>
-                  <span className="font-semibold text-emerald-200">₱{batchPaymentData.totalAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-emerald-200">₱{(adjustedBatchPaymentSummary?.totalAmount ?? 0).toFixed(2)}</span>
                 </div>
               </div>
               <p className="text-xs text-slate-300">This action will mark all players as finished with payment recorded.</p>
@@ -1344,17 +1501,22 @@ const PaymentsPage = ({
               <button
                 onClick={async () => {
                   // Process batch payment sequentially
-                  const playerIds = Array.from(selectedPlayersForBatch)
-                  for (const playerId of playerIds) {
-                    const summary = buildPaymentSummary(playerId)
-                    const sessionsToRemoveFrom = summary.rows.map((row) => row.sessionId)
+                  const adjustedDetails = adjustedBatchPaymentSummary?.playerDetails || []
+                  for (const detail of adjustedDetails) {
+                    const sessionsToRemoveFrom = (detail.rows || []).map((row) => row.sessionId)
                     if (onFinishPlayer) {
-                      await onFinishPlayer(playerId, { isExempted: false, sessionsToRemoveFrom })
+                      await onFinishPlayer(detail.playerId, {
+                        isExempted: false,
+                        sessionsToRemoveFrom,
+                        paidGames: detail.paidGames,
+                      })
                     }
-                    setFinishedPlayers((prev) => new Set([...prev, normalizeId(playerId)]))
+                    setFinishedPlayers((prev) => new Set([...prev, normalizeId(detail.playerId)]))
                   }
                   setShowBatchPaymentConfirmation(false)
                   setSelectedPlayersForBatch(new Set())
+                  setBatchPaymentData(adjustedBatchPaymentSummary || batchPaymentData)
+                  setBatchPaymentGamesInput({})
                   setShowBatchReceipt(true)
                 }}
                 className="flex-1 rounded-lg bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/30"
@@ -1382,7 +1544,7 @@ const PaymentsPage = ({
                     <div key={detail.playerId} className="mb-2 flex justify-between text-xs text-slate-300">
                       <span>{detail.playerName}</span>
                       <span>
-                        {detail.games} games
+                        {(detail.paidGames ?? detail.games ?? 0)} games
                       </span>
                     </div>
                   ))}

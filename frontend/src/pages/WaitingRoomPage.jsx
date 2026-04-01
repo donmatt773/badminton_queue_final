@@ -432,8 +432,8 @@ const WaitingRoomPage = () => {
                       const match = allMatches[(currentMatchIndex + idx + 1) % allMatches.length]
                       const playerIds = match.playerIds || []
                       const midpoint = Math.floor(playerIds.length / 2)
-                      const team1 = playerIds.slice(0, midpoint).map(pid => players?.find(p => p._id === pid)?.name || 'Unknown')
-                      const team2 = playerIds.slice(midpoint).map(pid => players?.find(p => p._id === pid)?.name || 'Unknown')
+                      const team1 = playerIds.slice(0, midpoint).map(pid => (players?.find(p => p._id === pid)?.name || 'Unknown').toUpperCase())
+                      const team2 = playerIds.slice(midpoint).map(pid => (players?.find(p => p._id === pid)?.name || 'Unknown').toUpperCase())
                       const courtName = courts?.find(c => c._id === match.courtId)?.name || 'Court'
                       
                       return (
@@ -567,8 +567,8 @@ const WaitingRoomPage = () => {
                         const court = courts.find(c => c._id === match.courtId)
                         const playerIds = match.playerIds || []
                         const midpoint = Math.floor(playerIds.length / 2)
-                        const team1Players = playerIds.slice(0, midpoint).map(pid => players.find(p => p._id === pid)?.name).filter(Boolean)
-                        const team2Players = playerIds.slice(midpoint).map(pid => players.find(p => p._id === pid)?.name).filter(Boolean)
+                        const team1Players = playerIds.slice(0, midpoint).map(pid => players.find(p => p._id === pid)?.name?.toUpperCase()).filter(Boolean)
+                        const team2Players = playerIds.slice(midpoint).map(pid => players.find(p => p._id === pid)?.name?.toUpperCase()).filter(Boolean)
                         
                         return (
                           <tr key={match._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -705,8 +705,8 @@ const WaitingRoomPage = () => {
                         const court = courts.find(c => c._id === match.courtId)
                         const playerIds = match.playerIds || []
                         const midpoint = Math.floor(playerIds.length / 2)
-                        const team1Players = playerIds.slice(0, midpoint).map(pid => players.find(p => p._id === pid)?.name).filter(Boolean)
-                        const team2Players = playerIds.slice(midpoint).map(pid => players.find(p => p._id === pid)?.name).filter(Boolean)
+                        const team1Players = playerIds.slice(0, midpoint).map(pid => players.find(p => p._id === pid)?.name?.toUpperCase()).filter(Boolean)
+                        const team2Players = playerIds.slice(midpoint).map(pid => players.find(p => p._id === pid)?.name?.toUpperCase()).filter(Boolean)
                         
                         return (
                           <tr key={match._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
