@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { gql } from '@apollo/client'
-import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import useDebouncedValue from '../hooks/useDebouncedValue'
 
@@ -84,7 +84,7 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className={`cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
+      className={`touch-none cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
     >
       <p className="truncate text-sm font-semibold text-white leading-tight">{player.name?.toUpperCase()}</p>
       <p className="text-[10px] text-slate-400 leading-tight">{player.playerLevel}</p>
@@ -184,8 +184,16 @@ const EditMatchForm = ({
   })
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      distance: 8,
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 8,
+      },
     })
   );
 

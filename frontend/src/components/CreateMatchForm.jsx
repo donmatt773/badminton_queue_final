@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useSubscription, useMutation } from "@apollo/client/react";
 import { gql } from "@apollo/client";
-import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 
 const COURT_SURFACE_TYPES = {
@@ -158,7 +158,7 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
       style={style}
       {...listeners}
       {...attributes}
-      className={`group relative cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
+      className={`group relative touch-none cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
     >
       {hasTeammateIndicator && (
         <TeammateIndicator
@@ -194,7 +194,7 @@ const DraggableSelectedPlayer = ({ playerId, children }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className="cursor-grab active:cursor-grabbing"
+      className="touch-none cursor-grab active:cursor-grabbing"
     >
       {children}
     </div>
@@ -315,9 +315,15 @@ const CreateMatchForm = ({
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 8,
       },
     })
   );
