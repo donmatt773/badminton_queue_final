@@ -1259,7 +1259,7 @@ const CreateMatchForm = ({
                             );
                           })}
                         </div>
-                        <span className="inline-flex min-w-[1.5rem] flex-col items-center leading-none">
+                        <span className="inline-flex min-w-6 flex-col items-center leading-none">
                           <span>{pageLetters[0]}</span>
                           {pageLetters.length > 1 && (
                             <>

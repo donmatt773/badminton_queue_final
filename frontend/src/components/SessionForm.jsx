@@ -878,90 +878,148 @@ const SessionForm = ({
                       return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
                     })
 
-                  // Calculate pagination
-                  const totalPages = Math.ceil(filteredPlayers.length / PLAYERS_PER_PAGE)
-                  const startIndex = (playerPage - 1) * PLAYERS_PER_PAGE
-                  const endIndex = startIndex + PLAYERS_PER_PAGE
-                  const paginatedPlayers = filteredPlayers.slice(startIndex, endIndex)
+                  // Alphabet-based pagination: 3 letters per page (matches Create/Edit Match)
+                  const allLetterGroups = [...new Set(
+                    filteredPlayers.map((player) => (player.name?.[0] || '#').toUpperCase())
+                  )].sort()
+                  const totalPages = Math.max(1, Math.ceil(allLetterGroups.length / 3))
+                  const clampedPlayerPage = Math.min(playerPage, totalPages)
+                  const pageLetters = allLetterGroups.slice((clampedPlayerPage - 1) * 3, (clampedPlayerPage - 1) * 3 + 3)
+                  const pageLetterSet = new Set(pageLetters)
+                  const paginatedPlayers = filteredPlayers.filter((player) =>
+                    pageLetterSet.has((player.name?.[0] || '#').toUpperCase())
+                  )
+
+                  const visiblePlayerPages = (() => {
+                    if (totalPages <= 7) {
+                      return Array.from({ length: totalPages }, (_, index) => index + 1)
+                    }
+
+                    const pages = [1]
+                    const start = Math.max(2, clampedPlayerPage - 1)
+                    const end = Math.min(totalPages - 1, clampedPlayerPage + 1)
+
+                    if (start > 2) pages.push('ellipsis-left')
+                    for (let page = start; page <= end; page += 1) pages.push(page)
+                    if (end < totalPages - 1) pages.push('ellipsis-right')
+                    pages.push(totalPages)
+
+                    return pages
+                  })()
 
                   return (
                     <>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-0.5 min-h-32">
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/10 pb-2 text-xs text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => setPlayerPage(Math.max(1, clampedPlayerPage - 1))}
+                            disabled={clampedPlayerPage === 1}
+                            className="rounded-full border border-slate-300/40 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Previous
+                          </button>
+                          <div className="hidden items-center gap-1 sm:flex">
+                            {visiblePlayerPages.map((item, index) => {
+                              if (typeof item !== 'number') {
+                                return (
+                                  <span key={`${item}-${index}`} className="px-1 text-xs text-slate-400">
+                                    ...
+                                  </span>
+                                )
+                              }
+
+                              const isActive = item === clampedPlayerPage
+                              return (
+                                <button
+                                  key={`session-player-page-${item}`}
+                                  type="button"
+                                  onClick={() => setPlayerPage(item)}
+                                  className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                                    isActive
+                                      ? 'border-sky-400/70 bg-sky-500/20 text-sky-100'
+                                      : 'border-slate-300/40 text-slate-200 hover:bg-slate-500/10'
+                                  }`}
+                                >
+                                  {allLetterGroups.slice((item - 1) * 3, (item - 1) * 3 + 3).join('·')}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <span className="inline-flex min-w-6 flex-col items-center leading-none">
+                            <span>{pageLetters[0]}</span>
+                            {pageLetters.length > 1 && (
+                              <>
+                                <span>-</span>
+                                <span>{pageLetters[pageLetters.length - 1]}</span>
+                              </>
+                            )}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setPlayerPage(Math.min(totalPages, clampedPlayerPage + 1))}
+                            disabled={clampedPlayerPage >= totalPages}
+                            className="rounded-full border border-slate-300/40 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 min-h-32">
                         {players.length === 0 ? (
                           <p className="text-sm text-slate-400 col-span-full">No players available</p>
                         ) : filteredPlayers.length === 0 ? (
                           <p className="text-sm text-slate-400 col-span-full">No players match your filters</p>
                         ) : (
-                          paginatedPlayers.map(player => (
-                            <label key={player._id} className={`flex flex-col gap-0 rounded-lg px-1.5 py-0.5 cursor-pointer transition border ${getPlayerCardClasses(player)}`}>
-                              <div className="flex items-center gap-0.5 leading-tight">
-                                <input
-                                  id={`session-player-${player._id}`}
-                                  name="selectedPlayers"
-                                  type="checkbox"
-                                  checked={formData.players.includes(player._id)}
-                                  onChange={() => handlePlayerToggle(player._id)}
-                                  className="h-2.5 w-2.5 rounded border-white/20 bg-white/10 cursor-pointer shrink-0"
-                                />
-                                <div className={`text-sm font-medium truncate leading-tight ${
-                                  formData.players.includes(player._id) ? 'text-emerald-200' : 'text-white'
-                                }`}>{player.name}</div>
-                              </div>
-                              <div className={`text-[8px] pl-3 leading-none ${
-                                formData.players.includes(player._id) ? 'text-emerald-300' : 'text-slate-400'
-                              }`}>{player.gender} • {formatPlayerLevel(player.playerLevel)}</div>
-                            </label>
-                          ))
+                          Object.entries(
+                            paginatedPlayers.reduce((groups, player) => {
+                              const letter = (player.name?.[0] || '#').toUpperCase()
+                              if (!groups[letter]) groups[letter] = []
+                              groups[letter].push(player)
+                              return groups
+                            }, {})
+                          ).flatMap(([letter, group]) => [
+                            <div key={`session-player-letter-${letter}`} className="col-span-full mb-1 flex items-center gap-2">
+                              <span className="text-[10px] font-bold tracking-widest text-slate-500">{letter}</span>
+                              <div className="h-px flex-1 bg-white/10" />
+                            </div>,
+                            ...group.map((player) => (
+                              <label key={player._id} className={`group relative cursor-pointer rounded border px-2 py-1.5 text-left transition ${getPlayerCardClasses(player)}`}>
+                                <div className="flex items-start gap-1.5">
+                                  <input
+                                    id={`session-player-${player._id}`}
+                                    name="selectedPlayers"
+                                    type="checkbox"
+                                    checked={formData.players.includes(player._id)}
+                                    onChange={() => handlePlayerToggle(player._id)}
+                                    className="mt-0.5 h-3 w-3 rounded border-white/20 bg-white/10 cursor-pointer shrink-0"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className={`truncate text-sm font-semibold leading-tight ${
+                                      formData.players.includes(player._id) ? 'text-emerald-200' : 'text-white'
+                                    }`}>{player.name?.toUpperCase()}</p>
+                                    <p className={`text-[10px] leading-tight ${
+                                      formData.players.includes(player._id) ? 'text-emerald-300' : 'text-slate-400'
+                                    }`}>{formatPlayerLevel(player.playerLevel)}</p>
+                                    <p className={`text-[9px] leading-tight ${
+                                      formData.players.includes(player._id) ? 'text-emerald-300' : 'text-slate-500'
+                                    }`}>{player.gender || 'N/A'}</p>
+                                    {formData.players.includes(player._id) && (
+                                      <p className="mt-0.5 text-[9px] leading-tight text-emerald-300">● Selected</p>
+                                    )}
+                                    {!formData.players.includes(player._id) && playersInOtherSessions.has(player._id) && (
+                                      <p className="mt-0.5 text-[9px] leading-tight text-pink-300">● In another session</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </label>
+                            )),
+                          ])
                         )}
                       </div>
 
-                      {/* Pagination Controls */}
-                      {totalPages > 1 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-white/10">
-                          <button
-                            type="button"
-                            onClick={() => setPlayerPage(prev => Math.max(prev - 1, 1))}
-                            disabled={playerPage === 1}
-                            className="rounded-lg bg-slate-700 px-2 py-1 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                          >
-                            ← Prev
-                          </button>
-                          <div className="flex items-center gap-0.5 text-[10px] sm:text-xs flex-wrap justify-center">
-                            {(() => {
-                              const maxButtonsToShow = typeof window !== 'undefined' && window.innerWidth < 640 ? 5 : 7
-                              let startPage = Math.max(1, playerPage - Math.floor(maxButtonsToShow / 2))
-                              let endPage = Math.min(totalPages, startPage + maxButtonsToShow - 1)
-                              
-                              if (endPage - startPage + 1 < maxButtonsToShow) {
-                                startPage = Math.max(1, endPage - maxButtonsToShow + 1)
-                              }
-                              
-                              return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
-                                <button
-                                  key={page}
-                                  type="button"
-                                  onClick={() => setPlayerPage(page)}
-                                  className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-xs font-semibold transition ${
-                                    playerPage === page
-                                      ? 'bg-emerald-500/20 text-emerald-200'
-                                      : 'bg-slate-700 text-white hover:bg-slate-600'
-                                  }`}
-                                >
-                                  {page}
-                                </button>
-                              ))
-                            })()}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setPlayerPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={playerPage === totalPages}
-                            className="rounded-lg bg-slate-700 px-2 py-1 text-[10px] sm:text-xs font-semibold text-white transition hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                          >
-                            Next →
-                          </button>
-                        </div>
-                      )}
                     </>
                   )
                 })()}
