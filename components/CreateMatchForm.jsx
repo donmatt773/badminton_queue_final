@@ -1231,7 +1231,7 @@ const CreateMatchForm = ({
                         onChange={(e) => handleShowZeroPlayCountOnlyChange(e.target.checked)}
                         className="h-3 w-3 rounded border-white/20 bg-white/10"
                       />
-                      Show 0 play count only
+                      Players who have not played yet
                     </label>
                     <label className="flex items-center gap-2" title="Show players who are in an ongoing match or queue">
                       <input
@@ -1249,17 +1249,17 @@ const CreateMatchForm = ({
 
                 {/* Player Grid - 4x3 with Pagination */}
                 <div className="order-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 text-[9px] text-slate-400">
-                        <span className="inline-flex items-center gap-1">
+                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="w-full">
+                      <div className="flex w-full flex-wrap items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 p-1.5 text-[9px] text-slate-300">
+                        <span className="hidden items-center gap-1 sm:inline-flex sm:mr-1">
                           <span className="h-2 w-2 rounded-full bg-blue-500" />
                           <span>Hover to see teammate history</span>
                         </span>
                         <button
                           type="button"
                           onClick={() => handleFilterBySkillChange(filterBySkill === 'BEGINNER' ? 'all' : 'BEGINNER')}
-                          className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition ${
+                          className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 transition ${
                             filterBySkill === 'BEGINNER' 
                               ? 'border border-blue-500/50 bg-blue-500/30' 
                               : 'hover:bg-blue-500/10'
@@ -1271,7 +1271,7 @@ const CreateMatchForm = ({
                         <button
                           type="button"
                           onClick={() => handleFilterBySkillChange(filterBySkill === 'INTERMEDIATE' ? 'all' : 'INTERMEDIATE')}
-                          className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition ${
+                          className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 transition ${
                             filterBySkill === 'INTERMEDIATE' 
                               ? 'border border-yellow-500/50 bg-yellow-500/30' 
                               : 'hover:bg-yellow-500/10'
@@ -1283,7 +1283,7 @@ const CreateMatchForm = ({
                         <button
                           type="button"
                           onClick={() => handleFilterBySkillChange(filterBySkill === 'UPPERINTERMEDIATE' ? 'all' : 'UPPERINTERMEDIATE')}
-                          className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition ${
+                          className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 transition ${
                             filterBySkill === 'UPPERINTERMEDIATE' 
                               ? 'border border-violet-500/50 bg-violet-500/30' 
                               : 'hover:bg-violet-500/10'
@@ -1295,7 +1295,7 @@ const CreateMatchForm = ({
                         <button
                           type="button"
                           onClick={() => handleFilterBySkillChange(filterBySkill === 'ADVANCED' ? 'all' : 'ADVANCED')}
-                          className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition ${
+                          className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 transition ${
                             filterBySkill === 'ADVANCED' 
                               ? 'border border-rose-500/50 bg-rose-500/30' 
                               : 'hover:bg-rose-500/10'
@@ -1307,14 +1307,15 @@ const CreateMatchForm = ({
                       </div>
                     </div>
                     {totalPlayerPages > 1 && (
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <div className="flex w-full items-center justify-between gap-2 text-xs text-slate-400 sm:w-auto sm:justify-end sm:gap-2">
                         <button
                           type="button"
                           onClick={() => setCurrentPlayerPage(Math.max(0, currentPlayerPage - 1))}
                           disabled={currentPlayerPage === 0}
-                          className="rounded-full border border-slate-300/40 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full border border-slate-300/40 px-2.5 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
                         >
-                          Previous
+                          <span className="sm:hidden">Prev</span>
+                          <span className="hidden sm:inline">Previous</span>
                         </button>
                         <div className="hidden items-center gap-1 sm:flex">
                           {visiblePlayerPages.map((item, index) => {
@@ -1343,22 +1344,19 @@ const CreateMatchForm = ({
                             );
                           })}
                         </div>
-                          <span className="inline-flex min-w-6 flex-col items-center leading-none">
-                            <span>{pageLetters[0]}</span>
-                            {pageLetters.length > 1 && (
-                              <>
-                                <span>-</span>
-                                <span>{pageLetters[pageLetters.length - 1]}</span>
-                              </>
-                            )}
+                        <span className="inline-flex min-w-14 justify-center rounded-full border border-slate-300/30 bg-slate-800/70 px-2 py-1 text-[10px] font-semibold text-slate-200">
+                          {pageLetters[0]
+                            ? `${pageLetters[0]}${pageLetters.length > 1 ? ` – ${pageLetters[pageLetters.length - 1]}` : ''}`
+                            : '-'}
                         </span>
                         <button
                           type="button"
                           onClick={() => setCurrentPlayerPage(Math.min(totalPlayerPages - 1, currentPlayerPage + 1))}
                           disabled={currentPlayerPage >= totalPlayerPages - 1}
-                          className="rounded-full border border-slate-300/40 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-full border border-slate-300/40 px-2.5 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
                         >
-                          Next
+                          <span className="sm:hidden">Next</span>
+                          <span className="hidden sm:inline">Next</span>
                         </button>
                       </div>
                     )}

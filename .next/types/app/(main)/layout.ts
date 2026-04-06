@@ -1,4 +1,4 @@
-// File: D:\projects\player-queuing\web\app\(main)\layout.js
+// File: C:\Users\donma\OneDrive\Desktop\badminton_queue_repo\pq_nextjs\app\(main)\layout.js
 import * as entry from '../../../../app/(main)/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

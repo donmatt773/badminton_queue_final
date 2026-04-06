@@ -732,6 +732,9 @@
   .min-w-7 {
     min-width: calc(var(--spacing) * 7);
   }
+  .min-w-14 {
+    min-width: calc(var(--spacing) * 14);
+  }
   .min-w-full {
     min-width: 100%;
   }
@@ -1232,6 +1235,12 @@
       border-color: color-mix(in oklab, var(--color-sky-400) 70%, transparent);
     }
   }
+  .border-slate-300\/30 {
+    border-color: color-mix(in srgb, oklch(86.9% 0.022 252.894) 30%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-slate-300) 30%, transparent);
+    }
+  }
   .border-slate-300\/40 {
     border-color: color-mix(in srgb, oklch(86.9% 0.022 252.894) 40%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -1626,6 +1635,12 @@
     background-color: color-mix(in srgb, oklch(27.9% 0.041 260.031) 60%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-slate-800) 60%, transparent);
+    }
+  }
+  .bg-slate-800\/70 {
+    background-color: color-mix(in srgb, oklch(27.9% 0.041 260.031) 70%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-slate-800) 70%, transparent);
     }
   }
   .bg-slate-800\/90 {
@@ -3015,6 +3030,11 @@
       margin-block: auto;
     }
   }
+  .sm\:mr-1 {
+    @media (width >= 40rem) {
+      margin-right: calc(var(--spacing) * 1);
+    }
+  }
   .sm\:flex {
     @media (width >= 40rem) {
       display: flex;
@@ -3023,6 +3043,16 @@
   .sm\:hidden {
     @media (width >= 40rem) {
       display: none;
+    }
+  }
+  .sm\:inline {
+    @media (width >= 40rem) {
+      display: inline;
+    }
+  }
+  .sm\:inline-flex {
+    @media (width >= 40rem) {
+      display: inline-flex;
     }
   }
   .sm\:table-cell {
@@ -3085,6 +3115,11 @@
       width: calc(var(--spacing) * 20);
     }
   }
+  .sm\:w-auto {
+    @media (width >= 40rem) {
+      width: auto;
+    }
+  }
   .sm\:max-w-20 {
     @media (width >= 40rem) {
       max-width: calc(var(--spacing) * 20);
@@ -3138,6 +3173,11 @@
   .sm\:justify-center {
     @media (width >= 40rem) {
       justify-content: center;
+    }
+  }
+  .sm\:justify-end {
+    @media (width >= 40rem) {
+      justify-content: flex-end;
     }
   }
   .sm\:justify-start {
@@ -3196,6 +3236,11 @@
   .sm\:px-0 {
     @media (width >= 40rem) {
       padding-inline: calc(var(--spacing) * 0);
+    }
+  }
+  .sm\:px-3 {
+    @media (width >= 40rem) {
+      padding-inline: calc(var(--spacing) * 3);
     }
   }
   .sm\:px-3\.5 {
