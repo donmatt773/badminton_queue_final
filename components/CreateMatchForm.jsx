@@ -91,6 +91,37 @@ const CREATE_PLAYER_MUTATION = gql`
 const LAST_SESSION_KEY = "lastCreateMatchSessionId";
 const PLAYERS_PER_PAGE = 12;
 
+// Color palette for teammate groups - unique colors for different pairs
+const TEAMMATE_COLOR_PALETTE = [
+  { border: 'border-red-400/80', bg: 'bg-red-400/30', hover: 'hover:bg-red-400/45', text: 'text-red-200' },
+  { border: 'border-blue-400/80', bg: 'bg-blue-400/30', hover: 'hover:bg-blue-400/45', text: 'text-blue-200' },
+  { border: 'border-orange-400/80', bg: 'bg-orange-400/30', hover: 'hover:bg-orange-400/45', text: 'text-orange-200' },
+  { border: 'border-purple-400/80', bg: 'bg-purple-400/30', hover: 'hover:bg-purple-400/45', text: 'text-purple-200' },
+  { border: 'border-pink-400/80', bg: 'bg-pink-400/30', hover: 'hover:bg-pink-400/45', text: 'text-pink-200' },
+  { border: 'border-amber-400/80', bg: 'bg-amber-400/30', hover: 'hover:bg-amber-400/45', text: 'text-amber-200' },
+  { border: 'border-fuchsia-400/80', bg: 'bg-fuchsia-400/30', hover: 'hover:bg-fuchsia-400/45', text: 'text-fuchsia-200' },
+  { border: 'border-indigo-400/80', bg: 'bg-indigo-400/30', hover: 'hover:bg-indigo-400/45', text: 'text-indigo-200' },
+  { border: 'border-violet-400/80', bg: 'bg-violet-400/30', hover: 'hover:bg-violet-400/45', text: 'text-violet-200' },
+  { border: 'border-rose-400/80', bg: 'bg-rose-400/30', hover: 'hover:bg-rose-400/45', text: 'text-rose-200' },
+  { border: 'border-sky-400/80', bg: 'bg-sky-400/30', hover: 'hover:bg-sky-400/45', text: 'text-sky-200' },
+  { border: 'border-cyan-400/80', bg: 'bg-cyan-400/30', hover: 'hover:bg-cyan-400/45', text: 'text-cyan-200' },
+];
+
+// Generate a consistent hash from teammate names to assign unique colors
+const getTeammateGroupHash = (teammateNames) => {
+  if (!Array.isArray(teammateNames) || teammateNames.length === 0) return 0;
+  
+  // Sort names for consistent hashing
+  const sorted = [...teammateNames].sort().join('');
+  let hash = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const char = sorted.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash) % TEAMMATE_COLOR_PALETTE.length;
+};
+
 const buildTeammateTooltip = (teammateNames) => {
   if (!Array.isArray(teammateNames) || teammateNames.length === 0) {
     return "";
@@ -99,28 +130,14 @@ const buildTeammateTooltip = (teammateNames) => {
   return `${teammateNames.join("\n")}`;
 };
 
-const TeammateIndicator = ({ tooltip, className, tooltipClassName = "" }) => {
-  if (!tooltip) {
-    return null;
-  }
-
-  return (
-    <span className={`absolute ${className}`}>
-      <span
-        className="block h-full w-full rounded-full bg-blue-500 ring-1 ring-slate-900"
-        aria-label={tooltip}
-      />
-      <span
-        className={`pointer-events-none absolute z-30 hidden max-w-48 whitespace-pre-line rounded border border-sky-400/30 bg-slate-950/95 px-2 py-1 text-[10px] font-medium leading-tight text-sky-50 shadow-lg shadow-slate-950/40 group-hover:block group-focus-within:block ${tooltipClassName}`}
-      >
-        {tooltip}
-      </span>
-    </span>
-  );
-};
-
 // Draggable Player Card Component
-const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = [] }) => {
+const DraggablePlayer = ({
+  player,
+  isInUse,
+  isAssignedToTeam,
+  teammateNames = [],
+  teammateGroupNames = [],
+}) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: player._id,
   });
@@ -132,27 +149,25 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
       }
     : undefined;
 
-  // Get color based on skill level
+  // Get color based on teammate group or status (not skill level)
   const getSkillColor = () => {
+    // Priority 1: Teammate group coloring
+    if (teammateGroupNames.length > 1) {
+      const colorIndex = getTeammateGroupHash(teammateGroupNames);
+      const color = TEAMMATE_COLOR_PALETTE[colorIndex];
+      return `${color.border} ${color.bg} ${color.hover}`;
+    }
+    
+    // Priority 2: Assignment status
     if (isAssignedToTeam) return "border-emerald-500/30 bg-emerald-500/10";
     if (isInUse) return "border-amber-500/30 bg-amber-500/10";
-    
-    switch (player.playerLevel) {
-      case "BEGINNER":
-        return "border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20";
-      case "INTERMEDIATE":
-        return "border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20";
-      case "UPPERINTERMEDIATE":
-        return "border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20";
-      case "ADVANCED":
-        return "border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20";
-      default:
-        return "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20";
-    }
+
+    // Priority 3: Default green fallback
+    return "border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20";
   };
 
   const teammateTooltip = buildTeammateTooltip(teammateNames);
-  const hasTeammateIndicator = teammateNames.length > 0;
+  const cardPulseClass = isInUse && !isAssignedToTeam ? "animate-pulse" : "";
 
   return (
     <div
@@ -160,17 +175,13 @@ const DraggablePlayer = ({ player, isInUse, isAssignedToTeam, teammateNames = []
       style={style}
       {...listeners}
       {...attributes}
-      className={`group relative touch-none cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()}`}
+      className={`group relative touch-none cursor-grab active:cursor-grabbing select-none rounded border px-2 py-1.5 text-center transition ${getSkillColor()} ${cardPulseClass}`}
+      title={teammateTooltip || undefined}
     >
-      {hasTeammateIndicator && (
-        <TeammateIndicator
-          tooltip={teammateTooltip}
-          className="right-1 top-1 h-2 w-2"
-          tooltipClassName="right-0 top-4"
-        />
-      )}
       <p className="truncate text-sm font-semibold text-white leading-tight">{player.name?.toUpperCase()}</p>
-      <p className="text-[10px] text-slate-400 leading-tight">{player.playerLevel}</p>
+      <p className={`text-[10px] leading-tight ${getSkillLevelTextColor(player.playerLevel)}`}>
+        Skill: {formatSkillLevelLabel(player.playerLevel)}
+      </p>
       <p className="text-[9px] text-slate-400 leading-tight">Play count this session: {player.gamesPlayed ?? 0}</p>
       <p className="text-[9px] text-slate-500 leading-tight">{player.gender}</p>
       {isAssignedToTeam && <p className="mt-0.5 text-[9px] text-emerald-400 leading-tight">● In Team</p>}
@@ -224,20 +235,12 @@ const DroppableTeam = ({ teamNumber, children }) => {
   );
 };
 
-// Helper function to get skill level color for team display
-const getSkillLevelColor = (skillLevel) => {
-  switch (skillLevel) {
-    case "BEGINNER":
-      return "bg-blue-500/20 border-blue-300/50";
-    case "INTERMEDIATE":
-      return "bg-yellow-500/20 border-yellow-300/50";
-    case "UPPERINTERMEDIATE":
-      return "bg-violet-500/20 border-violet-300/50";
-    case "ADVANCED":
-      return "bg-rose-500/20 border-rose-300/50";
-    default:
-      return "bg-slate-500/20 border-slate-300/50";
+const getTeammateGroupColor = (teammateGroupNames) => {
+  if (!Array.isArray(teammateGroupNames) || teammateGroupNames.length <= 1) {
+    return null;
   }
+  const colorIndex = getTeammateGroupHash(teammateGroupNames);
+  return TEAMMATE_COLOR_PALETTE[colorIndex];
 };
 
 const getSkillLevelTextColor = (skillLevel) => {
@@ -252,6 +255,21 @@ const getSkillLevelTextColor = (skillLevel) => {
       return "text-rose-300";
     default:
       return "text-slate-300";
+  }
+};
+
+const formatSkillLevelLabel = (skillLevel) => {
+  switch (skillLevel) {
+    case "UPPERINTERMEDIATE":
+      return "Upper Intermediate";
+    case "INTERMEDIATE":
+      return "Intermediate";
+    case "BEGINNER":
+      return "Beginner";
+    case "ADVANCED":
+      return "Advanced";
+    default:
+      return skillLevel || "Not Set";
   }
 };
 
@@ -619,36 +637,53 @@ const CreateMatchForm = ({
     return map;
   }, [sessionGames]);
 
-  const teammateNamesByPlayerId = useMemo(() => {
-    const selectedIds = [...team1, ...team2].map(String);
-    const selectedNameById = new Map(
+  const teammateGroupDataByPlayerId = useMemo(() => {
+    const playerIdList = playersInSession.map((player) => String(player._id));
+    const playerIdSet = new Set(playerIdList);
+    const playerNameById = new Map(
       playersInSession.map((player) => [String(player._id), player.name])
     );
-    const map = new Map();
+    const visited = new Set();
+    const groupMap = new Map();
 
-    for (const selectedId of selectedIds) {
-      const teammates = teammatesByPlayer.get(selectedId);
-      const selectedName = selectedNameById.get(selectedId);
-      if (!teammates) continue;
+    for (const startId of playerIdList) {
+      if (visited.has(startId)) continue;
 
-      for (const teammateId of teammates) {
-        if (teammateId === selectedId || !selectedName) {
-          continue;
+      const queue = [startId];
+      const component = [];
+      visited.add(startId);
+
+      while (queue.length > 0) {
+        const currentId = queue.shift();
+        component.push(currentId);
+        const teammates = teammatesByPlayer.get(currentId) || new Set();
+
+        for (const teammateId of teammates) {
+          if (!playerIdSet.has(teammateId) || visited.has(teammateId)) {
+            continue;
+          }
+          visited.add(teammateId);
+          queue.push(teammateId);
         }
+      }
 
-        if (!map.has(teammateId)) {
-          map.set(teammateId, []);
-        }
+      const teammateGroupNames = component
+        .map((id) => playerNameById.get(id))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
 
-        const names = map.get(teammateId);
-        if (!names.includes(selectedName)) {
-          names.push(selectedName);
-        }
+      for (const memberId of component) {
+        const memberName = playerNameById.get(memberId);
+        const teammateNames = teammateGroupNames.filter((name) => name !== memberName);
+        groupMap.set(memberId, {
+          teammateNames,
+          teammateGroupNames,
+        });
       }
     }
 
-    return map;
-  }, [playersInSession, team1, team2, teammatesByPlayer]);
+    return groupMap;
+  }, [playersInSession, teammatesByPlayer]);
 
   // Filter by search term
   if (searchTerm.trim()) {
@@ -1253,8 +1288,8 @@ const CreateMatchForm = ({
                     <div className="w-full">
                       <div className="flex w-full flex-wrap items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 p-1.5 text-[9px] text-slate-300">
                         <span className="hidden items-center gap-1 sm:inline-flex sm:mr-1">
-                          <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          <span>Hover to see teammate history</span>
+                          <span className="h-2 w-2 rounded-full bg-[conic-gradient(from_0deg,red,orange,yellow,green,cyan,blue,violet,red)] animate-spin [animation-duration:1.6s]" />
+                          <span>Players that have played as teammates</span>
                         </span>
                         <button
                           type="button"
@@ -1378,7 +1413,9 @@ const CreateMatchForm = ({
                           </div>
                           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                             {group.map((player) => {
-                              const teammateNames = teammateNamesByPlayerId.get(String(player._id)) || [];
+                              const teammateData = teammateGroupDataByPlayerId.get(String(player._id));
+                              const teammateNames = teammateData?.teammateNames || [];
+                              const teammateGroupNames = teammateData?.teammateGroupNames || [];
                               return (
                                 <DraggablePlayer
                                   key={player._id}
@@ -1386,6 +1423,7 @@ const CreateMatchForm = ({
                                   isInUse={playersInUseSet.has(player._id)}
                                   isAssignedToTeam={team1.includes(player._id) || team2.includes(player._id)}
                                   teammateNames={teammateNames}
+                                  teammateGroupNames={teammateGroupNames}
                                 />
                               );
                             })}
@@ -1423,26 +1461,27 @@ const CreateMatchForm = ({
                           {team1.map((playerId) => {
                             const player = playersInSession.find(p => p._id === playerId);
                             const playerLevel = player?.playerLevel || "No Skill Level Assinged";
-                            const teammateNames = teammateNamesByPlayerId.get(String(playerId)) || [];
+                            const teammateData = teammateGroupDataByPlayerId.get(String(playerId));
+                            const teammateNames = teammateData?.teammateNames || [];
+                            const teammateGroupNames = teammateData?.teammateGroupNames || [];
+                            const teammateColor = getTeammateGroupColor(teammateGroupNames);
                             const teammateTooltip = buildTeammateTooltip(teammateNames);
                             return (
                             <DraggableSelectedPlayer key={playerId} playerId={playerId}>
                               <div
-                                className={`group relative flex items-center justify-between rounded border px-1.5 py-0.5 ${getSkillLevelColor(player?.playerLevel)}`}
+                                className={`group relative flex items-center justify-between rounded border px-1.5 py-0.5 ${
+                                  teammateColor
+                                    ? `${teammateColor.border} ${teammateColor.bg}`
+                                    : "border-blue-300/30 bg-blue-500/10"
+                                } ${playersInUseSet.has(playerId) ? "animate-pulse" : ""}`}
+                                title={teammateTooltip || undefined}
                               >
-                                {teammateNames.length > 0 && (
-                                  <TeammateIndicator
-                                    tooltip={teammateTooltip}
-                                    className="-right-1 -top-1 h-2.5 w-2.5"
-                                    tooltipClassName="right-0 top-4"
-                                  />
-                                )}
                                 <div className="text-[11px] text-white">
                                   <div className="font-semibold leading-tight">
                                     {getPlayerName(playerId)?.toUpperCase()}
-                                    <span className={`ml-1 ${getSkillLevelTextColor(playerLevel)}`}>
-                                      - {playerLevel}
-                                    </span>
+                                  </div>
+                                  <div className={`text-[10px] leading-tight ${getSkillLevelTextColor(playerLevel)}`}>
+                                    Skill: {formatSkillLevelLabel(playerLevel)}
                                   </div>
                                 </div>
                                 <button
@@ -1484,26 +1523,27 @@ const CreateMatchForm = ({
                           {team2.map((playerId) => {
                             const player = playersInSession.find(p => p._id === playerId);
                             const playerLevel = player?.playerLevel || "No Skill Level Assigned";
-                            const teammateNames = teammateNamesByPlayerId.get(String(playerId)) || [];
+                            const teammateData = teammateGroupDataByPlayerId.get(String(playerId));
+                            const teammateNames = teammateData?.teammateNames || [];
+                            const teammateGroupNames = teammateData?.teammateGroupNames || [];
+                            const teammateColor = getTeammateGroupColor(teammateGroupNames);
                             const teammateTooltip = buildTeammateTooltip(teammateNames);
                             return (
                             <DraggableSelectedPlayer key={playerId} playerId={playerId}>
                               <div
-                                className={`group relative flex items-center justify-between rounded border px-1.5 py-0.5 ${getSkillLevelColor(player?.playerLevel)}`}
+                                className={`group relative flex items-center justify-between rounded border px-1.5 py-0.5 ${
+                                  teammateColor
+                                    ? `${teammateColor.border} ${teammateColor.bg}`
+                                    : "border-rose-300/30 bg-rose-500/10"
+                                } ${playersInUseSet.has(playerId) ? "animate-pulse" : ""}`}
+                                title={teammateTooltip || undefined}
                               >
-                                {teammateNames.length > 0 && (
-                                  <TeammateIndicator
-                                    tooltip={teammateTooltip}
-                                    className="-right-1 -top-1 h-2.5 w-2.5"
-                                    tooltipClassName="right-0 top-4"
-                                  />
-                                )}
                                 <div className="text-[11px] text-white">
                                   <div className="font-semibold leading-tight">
                                     {getPlayerName(playerId)?.toUpperCase()}
-                                    <span className={`ml-1 ${getSkillLevelTextColor(playerLevel)}`}>
-                                      - {playerLevel}
-                                    </span>
+                                  </div>
+                                  <div className={`text-[10px] leading-tight ${getSkillLevelTextColor(playerLevel)}`}>
+                                    Skill: {formatSkillLevelLabel(playerLevel)}
                                   </div>
                                 </div>
                                 <button
