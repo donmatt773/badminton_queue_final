@@ -27,8 +27,8 @@ import connectDB from "./configs/mongodb.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const rootEnvPath = path.resolve(__dirname, "../../.env")
-dotenv.config({ path: rootEnvPath })
+const backendEnvPath = path.resolve(__dirname, "../.env")
+dotenv.config({ path: backendEnvPath })
 
 
 const app = express()
