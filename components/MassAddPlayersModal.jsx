@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState } from 'react'
+import { getBackendApiUrl } from '@/lib/backendEndpoints'
 
 const MassAddPlayersModal = ({
   isOpen,
@@ -120,10 +121,7 @@ const MassAddPlayersModal = ({
 
     setIsSubmitting(true)
     try {
-      // Get backend URL from environment or use default
-      const _backendHost = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}` : 'http://localhost'
-      const backendUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || `${_backendHost}:${process.env.NEXT_PUBLIC_BACKEND_PORT || '4000'}/graphql`
-      const apiUrl = backendUrl.replace('/graphql', '/api/players/bulk')
+      const apiUrl = getBackendApiUrl('/api/players/bulk')
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -206,10 +204,7 @@ const MassAddPlayersModal = ({
       const formData = new FormData()
       formData.append('file', uploadFile)
 
-      // Get backend URL from environment or use default
-      const _backendHost2 = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}` : 'http://localhost'
-      const backendUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || `${_backendHost2}:${process.env.NEXT_PUBLIC_BACKEND_PORT || '4000'}/graphql`
-      const uploadUrl = backendUrl.replace('/graphql', '/api/players/upload')
+      const uploadUrl = getBackendApiUrl('/api/players/upload')
 
       const response = await fetch(uploadUrl, {
         method: 'POST',

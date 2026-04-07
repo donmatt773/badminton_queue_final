@@ -3242,21 +3242,6 @@
       opacity: 50%;
     }
   }
-  .max-\[480px\]\:hidden {
-    @media (width < 480px) {
-      display: none;
-    }
-  }
-  .max-\[480px\]\:inline {
-    @media (width < 480px) {
-      display: inline;
-    }
-  }
-  .max-\[480px\]\:table-row {
-    @media (width < 480px) {
-      display: table-row;
-    }
-  }
   .sm\:top-2 {
     @media (width >= 40rem) {
       top: calc(var(--spacing) * 2);

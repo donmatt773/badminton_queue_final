@@ -5,6 +5,7 @@ import { useMutation, useQuery, useSubscription } from '@apollo/client/react'
 import { gql } from '@apollo/client'
 import MassAddPlayersModal from './MassAddPlayersModal'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { getBackendApiUrl } from '@/lib/backendEndpoints'
 
 const COURT_SURFACE_TYPES = {
   'WOODEN': 'Wooden',
@@ -31,10 +32,7 @@ const formatCourtSurfaceType = (value) => COURT_SURFACE_TYPES[value] ?? value
 const formatPlayerLevel = (value) => PLAYER_LEVELS[value] ?? value
 const normalizePlayerName = (value) => value.trim().toLowerCase()
 
-const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-const browserProtocol = typeof window !== 'undefined' ? window.location.protocol : 'http:'
-const defaultGraphqlUri = `${browserProtocol}//${browserHost}:4000/graphql`
-const playersBulkApiUrl = (process.env.NEXT_PUBLIC_GRAPHQL_URL || defaultGraphqlUri).replace('/graphql', '/api/players/bulk')
+const playersBulkApiUrl = getBackendApiUrl('/api/players/bulk')
 
 const COURTS_QUERY = gql`
   query Courts {

@@ -16,45 +16,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/loading.js"
     ],
-    "/(main)/ongoing/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/ongoing/page.js"
-    ],
-    "/waiting-room/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/waiting-room/page.js"
-    ],
-    "/favicon.ico/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/favicon.ico/route.js"
-    ],
-    "/(main)/payments/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/payments/page.js"
-    ],
     "/(main)/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/page.js"
     ],
-    "/(main)/players/page": [
+    "/(main)/ongoing/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/players/page.js"
+      "static/chunks/app/(main)/ongoing/page.js"
     ],
-    "/(main)/courts/page": [
+    "/(main)/payments/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/courts/page.js"
-    ],
-    "/(main)/records/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/records/page.js"
+      "static/chunks/app/(main)/payments/page.js"
     ]
   }
 }
