@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { gql } from '@apollo/client';
 import { useQuery, useMutation } from '@apollo/client/react';
-import Pusher from 'pusher-js';
+import { createPusherClient } from '@/lib/pusherClient';
 import { PUSHER_CHANNEL, PUSHER_EVENTS } from '@/lib/pusherEvents';
 
 const SESSIONS_QUERY = gql`
@@ -369,9 +369,8 @@ export function AppDataProvider({ children }) {
   const [ongoingMatchSubData, setOngoingMatchSubData] = useState(null);
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    });
+    const pusher = createPusherClient();
+    if (!pusher) return undefined;
     const channel = pusher.subscribe(PUSHER_CHANNEL);
 
     channel.bind(PUSHER_EVENTS.SESSION, () => { refetch(); });
@@ -384,6 +383,8 @@ export function AppDataProvider({ children }) {
 
     return () => {
       channel.unbind_all();
+      pusher.unsubscribe(PUSHER_CHANNEL);
+      pusher.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

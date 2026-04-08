@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { gql } from '@apollo/client'
 import { useMutation, useQuery } from '@apollo/client/react'
-import Pusher from 'pusher-js'
+import { createPusherClient } from '@/lib/pusherClient'
 import { PUSHER_CHANNEL, PUSHER_EVENTS } from '@/lib/pusherEvents'
 import MassAddPlayersModal from '@/components/MassAddPlayersModal'
 
@@ -422,9 +422,8 @@ const PlayersPage = ({ onPlayersUpdated, ongoingMatches = {}, matchQueue = {} })
   const { data: playerUpdateData } = { data: null } // replaced by Pusher below
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    })
+    const pusher = createPusherClient()
+    if (!pusher) return undefined
     const channel = pusher.subscribe(PUSHER_CHANNEL)
     const handlePlayerEvent = () => {
       refetchPlayers()
@@ -435,6 +434,8 @@ const PlayersPage = ({ onPlayersUpdated, ongoingMatches = {}, matchQueue = {} })
 
     return () => {
       channel.unbind(PUSHER_EVENTS.PLAYER, handlePlayerEvent)
+      pusher.unsubscribe(PUSHER_CHANNEL)
+      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { gql } from '@apollo/client'
-import Pusher from 'pusher-js'
+import { createPusherClient } from '@/lib/pusherClient'
 import { PUSHER_CHANNEL, PUSHER_EVENTS } from '@/lib/pusherEvents'
 import { DndContext, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
@@ -291,13 +291,14 @@ const EditMatchForm = ({
   })
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    })
+    const pusher = createPusherClient()
+    if (!pusher) return undefined
     const channel = pusher.subscribe(PUSHER_CHANNEL)
     channel.bind(PUSHER_EVENTS.GAME, () => { refetchGames() })
     return () => {
       channel.unbind_all()
+      pusher.unsubscribe(PUSHER_CHANNEL)
+      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

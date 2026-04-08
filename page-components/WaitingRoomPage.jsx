@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { gql } from '@apollo/client'
 import { useQuery } from '@apollo/client/react'
-import Pusher from 'pusher-js'
+import { createPusherClient } from '@/lib/pusherClient'
 import { PUSHER_CHANNEL, PUSHER_EVENTS } from '@/lib/pusherEvents'
 import BadmintonCourt from '@/components/BadmintonCourt'
 import CourtPreview from '@/components/CourtPreview'
@@ -135,14 +135,15 @@ const WaitingRoomPage = () => {
 
   // Pusher real-time updates
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    })
+    const pusher = createPusherClient()
+    if (!pusher) return undefined
     const channel = pusher.subscribe(PUSHER_CHANNEL)
     channel.bind(PUSHER_EVENTS.MATCH, () => { refetchMatches() })
     channel.bind(PUSHER_EVENTS.PLAYER, () => { refetchPlayers() })
     return () => {
       channel.unbind_all()
+      pusher.unsubscribe(PUSHER_CHANNEL)
+      pusher.disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

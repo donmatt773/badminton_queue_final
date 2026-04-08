@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { gql } from '@apollo/client'
 import { useQuery } from '@apollo/client/react'
-import Pusher from 'pusher-js'
+import { createPusherClient } from '@/lib/pusherClient'
 import { PUSHER_CHANNEL, PUSHER_EVENTS } from '@/lib/pusherEvents'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 
@@ -85,9 +85,8 @@ const SessionMatchRecordModal = ({ sessionId, sessionIds = [], sessions = [], se
   })
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
-    })
+    const pusher = createPusherClient()
+    if (!pusher) return undefined
     const channel = pusher.subscribe(PUSHER_CHANNEL)
     channel.bind(PUSHER_EVENTS.GAME, () => {
       if (isAllSessionsMode) refetchAll()
@@ -95,6 +94,8 @@ const SessionMatchRecordModal = ({ sessionId, sessionIds = [], sessions = [], se
     })
     return () => {
       channel.unbind_all()
+      pusher.unsubscribe(PUSHER_CHANNEL)
+      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAllSessionsMode])
