@@ -143,8 +143,6 @@ const SessionForm = ({
     channel.bind(PUSHER_EVENTS.PLAYER, () => { refetchPlayers() })
     return () => {
       channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

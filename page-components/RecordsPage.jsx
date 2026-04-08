@@ -93,8 +93,6 @@ const RecordsPage = () => {
     channel.bind(PUSHER_EVENTS.SESSION, () => { refetchSessions(); refetchGames() })
     return () => {
       channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

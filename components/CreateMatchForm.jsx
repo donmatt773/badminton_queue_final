@@ -354,8 +354,6 @@ const CreateMatchForm = ({
     channel.bind(PUSHER_EVENTS.GAME, () => { refetchGames() })
     return () => {
       channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

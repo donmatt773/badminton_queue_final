@@ -322,8 +322,6 @@ const CourtsPage = () => {
     channel.bind(PUSHER_EVENTS.COURT, () => { refetchCourts() })
     return () => {
       channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

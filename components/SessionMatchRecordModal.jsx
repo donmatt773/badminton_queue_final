@@ -95,8 +95,6 @@ const SessionMatchRecordModal = ({ sessionId, sessionIds = [], sessions = [], se
     })
     return () => {
       channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAllSessionsMode])

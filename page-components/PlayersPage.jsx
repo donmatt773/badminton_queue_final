@@ -426,15 +426,15 @@ const PlayersPage = ({ onPlayersUpdated, ongoingMatches = {}, matchQueue = {} })
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
     })
     const channel = pusher.subscribe(PUSHER_CHANNEL)
-    channel.bind(PUSHER_EVENTS.PLAYER, () => {
+    const handlePlayerEvent = () => {
       refetchPlayers()
       refetchCount()
       refetchDeletedPlayers()
-    })
+    }
+    channel.bind(PUSHER_EVENTS.PLAYER, handlePlayerEvent)
+
     return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(PUSHER_CHANNEL)
-      pusher.disconnect()
+      channel.unbind(PUSHER_EVENTS.PLAYER, handlePlayerEvent)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
